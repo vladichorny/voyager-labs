@@ -41,7 +41,7 @@ pipeline {
             steps {
                 runCommand script: """
                     ansible-playbook ansible-playbook/install.yml
-                    service=$(minikube service --url web-service)
+                    service=\$(minikube service --url web-service)
                     echo "\$service"
                     #start www.google.com
                 """
