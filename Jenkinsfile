@@ -26,25 +26,14 @@ pipeline {
         stage('Docker Build') {
             steps {
                 dir("docker-files/docker-service") {
-                    runCommand script: """
-                        docker image inspect --format '{{index .RepoTags}}' "${docker_service}" 2> /dev/null | grep -q "${docker_service}" && \
-                            docker rmi --force ${docker_service} || true
-                        docker build --rm --tag ${docker_service} .
-                        # docker save ${docker_service} > ${WORKSPACE}/${publish_content}/${docker_service_file_name}.dockerimage
-                        # gzip ${WORKSPACE}/${publish_content}/${docker_service_file_name}.dockerimage
-                    """
+                    runCommand script: "${WORKSPACE}/docker_build.sh"
                 }
             }
         }
 
         stage('Deployment') {
             steps {
-                runCommand script: """
-                    ansible-playbook ansible-playbook/install.yml
-                    service=\$(minikube service --url web-service)
-                    echo "\$service"
-                    #start www.google.com
-                """
+                runCommand script: "${WORKSPACE}/deployment.sh"
             }
         }
     }
@@ -54,10 +43,10 @@ def runCommand(Map config = [:]) {
     def script = config.script
 
     if (isUnix()) {
-        sh script: script
+        sh script: "sh $script"
     } else {
         bat script: """
-            ${cygwin_path}\\bin\\bash --login -c "${script}"
+            ${cygwin_path}\\bin\\bash --login "${script}"
         """
     }
 }
