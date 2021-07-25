@@ -24,27 +24,40 @@ pipeline {
         stage('Docker Build') {
             steps {
                 dir("docker-files/docker-service") {
-                    runCommand script: "${WORKSPACE}/docker_build.sh"
+                    script {
+                        if (isUnix()) {
+                            sh script: """
+                                docker image inspect --format '{{index .RepoTags}}' "docker-service:1.0.0" 2> /dev/null | grep -q "docker-service:1.0.0" && \
+                                    docker rmi --force docker-service:1.0.0 || true
+                                docker build --rm --tag docker-service:1.0.0 .
+                            """
+                        } else {
+                            bat script: """
+                                docker image inspect --format '{{index .RepoTags}}' "docker-service:1.0.0" 2> /dev/null | grep -q "docker-service:1.0.0" && \
+                                    docker rmi --force docker-service:1.0.0 || true
+                                docker build --rm --tag docker-service:1.0.0 .
+                            """
+                        }
+                    }
                 }
             }
         }
 
         stage('Deployment') {
             steps {
-                runCommand script: "${WORKSPACE}/deployment.sh"
+                runCygwin script: "${WORKSPACE}/deployment.sh"
             }
         }
     }
 }
 
-def runCommand(Map config = [:]) {
+def runCygwin(Map config = [:]) {
     def script = config.script
 
     if (isUnix()) {
         sh script: "sh ${script}"
     } else {
         def script_linux_format = script.replace("\\", "/")
-        println "Command to run: ${command}"
         bat script: """
             ${cygwin_path}\\bin\\bash --login -c "dos2unix ${script_linux_format}"
             ${cygwin_path}\\bin\\bash --login "${script_linux_format}"
