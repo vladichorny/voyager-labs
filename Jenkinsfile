@@ -43,9 +43,10 @@ def runCommand(Map config = [:]) {
     if (isUnix()) {
         sh script: "sh $script"
     } else {
+        def linux_path_format = script.replace("\\", "/")
         bat script: """
-            ${cygwin_path}\\bin\\bash --login -c "dos2unix ${script}"
-            ${cygwin_path}\\bin\\bash --login "${script}"
+            ${cygwin_path}\\bin\\bash --login -c "dos2unix ${linux_path_format}"
+            ${cygwin_path}\\bin\\bash --login "${linux_path_format}"
         """
     }
 }
