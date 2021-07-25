@@ -44,6 +44,7 @@ def runCommand(Map config = [:]) {
         sh script: "sh $script"
     } else {
         bat script: """
+            ${cygwin_path}\\bin\\bash --login -c "dos2unix ${script}"
             ${cygwin_path}\\bin\\bash --login "${script}"
         """
     }
