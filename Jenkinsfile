@@ -31,8 +31,7 @@ pipeline {
 
         stage('Deployment') {
             steps {
-                runCommand script: "${WORKSPACE}/deployment.sh",
-                    args: "${WORKSPACE}/docker-files/docker-service" 
+                runCommand script: "${WORKSPACE}/deployment.sh"
             }
         }
     }
@@ -40,17 +39,15 @@ pipeline {
 
 def runCommand(Map config = [:]) {
     def script = config.script
-    def args = config.get("args", "")
 
     if (isUnix()) {
-        sh script: "sh ${script} ${args}"
+        sh script: "sh ${script}"
     } else {
         def script_linux_format = script.replace("\\", "/")
-        def args_linux_format = args.replace("\\", "/")
-        def command = args == "" ? script_linux_format : "${script_linux_format} ${args_linux_format}"
+        println "Command to run: ${command}"
         bat script: """
             ${cygwin_path}\\bin\\bash --login -c "dos2unix ${script_linux_format}"
-            ${cygwin_path}\\bin\\bash --login "${command}"
+            ${cygwin_path}\\bin\\bash --login "${script_linux_format}"
         """
     }
 }
