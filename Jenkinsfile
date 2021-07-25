@@ -1,6 +1,4 @@
 
-cygwin_path = "C:\\cygwin64"
-
 pipeline {
     agent { label 'master' }
 
@@ -11,7 +9,6 @@ pipeline {
         timestamps()
         timeout(time: 60, unit: 'MINUTES')
     }
-
 
     stages {
         stage("Checkout"){
@@ -24,41 +21,31 @@ pipeline {
         stage('Docker Build') {
             steps {
                 dir("docker-files/docker-service") {
-                    script {
-                        if (isUnix()) {
-                            sh script: """
-                                docker rmi --force docker-service:1.0.0 || true                                    
-                                docker build --rm --tag docker-service:1.0.0 .
-                            """
-                        } else {
-                            bat script: """
-                                docker rmi --force docker-service:1.0.0 || true
-                                docker build --rm --tag docker-service:1.0.0 .
-                            """
-                        }
-                    }
+                    sh script: """
+                        eval $(minikube docker-env)
+                        docker rmi --force docker-service:1.0.0 || true                                    
+                        docker build --rm --tag docker-service:1.0.0 .
+                        docker scan  docker-service:1.0.0
+                        eval $(minikube docker-env --unset)
+                    """
                 }
             }
         }
 
         stage('Deployment') {
             steps {
-                runCygwin script: "${WORKSPACE}/deployment.sh"
+                sh script: """
+                    ansible-playbook ./ansible-playbook/install.yml
+                    service=$(minikube service --url web-service)
+                """
+            }
+        }
+
+        post {
+            always {
+                println "This build and deployment took: ${currentBuild.durationString}"
             }
         }
     }
 }
 
-def runCygwin(Map config = [:]) {
-    def script = config.script
-
-    if (isUnix()) {
-        sh script: "sh ${script}"
-    } else {
-        def script_linux_format = script.replace("\\", "/")
-        bat script: """
-            ${cygwin_path}\\bin\\bash --login -c "dos2unix ${script_linux_format}"
-            ${cygwin_path}\\bin\\bash --login "${script_linux_format}"
-        """
-    }
-}

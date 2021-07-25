@@ -1,7 +1,7 @@
 apiVersion: v2
 appVersion: 1
-description: What is my ip
-name: what-is-my-ip
+description: Info service
+name: info-service
 version: 1.0.0
 dependencies:
   - name: ip-resolver
