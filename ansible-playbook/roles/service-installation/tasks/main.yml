@@ -1,0 +1,5 @@
+---
+- name: install csi driver smb helm chart
+  shell: |
+    helm upgrade --install info-service {{ helm_charts_path }}/info-service \
+        --namespace {{ k8s_namespace }} --create-namespace --wait --timeout 5m

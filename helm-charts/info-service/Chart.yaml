@@ -1,0 +1,8 @@
+apiVersion: v2
+appVersion: 1
+description: What is my ip
+name: what-is-my-ip
+version: 1.0.0
+dependencies:
+  - name: ip-resolver
+  - name: web-service

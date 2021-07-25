@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "ip-resolver.fullname" . }}
+  labels:
+    {{- include "ip-resolver.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "ip-resolver.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "ip-resolver.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "ip-resolver.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["/bin/sh","-c"]
+          args:
+            - |
+              echo "$(sed 's/^nameserver.*/nameserver 8.8.8.8/g' /etc/resolv.conf)" >  /etc/resolv.conf
+              while true; do
+                DOCKER_HOST=$(/sbin/ip route|awk '/default/ { print $3 }')
+                PUBLIC_IP=$(wget -q -O - ipinfo.io/ip)
+                echo -e "<!doctype html>\n<html>\n<head>\n<title>Host Info</title>\n</head>" > /tmp/html/index.html
+                echo -e "<body>\n<p>Host name is: ${HOSTNAME}</p>\n<br>\n" >> /tmp/html/index.html
+                echo -e "<body>\n<p>Host IP is: ${DOCKER_HOST}</p>\n<br>\n" >> /tmp/html/index.html
+                echo -e "<p>Public IP is: ${PUBLIC_IP}</p>\n</body></html>" >> /tmp/html/index.html
+                sleep 3;
+              done
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - mountPath: {{ .Values.volumes.mountPath }}
+              name: ip-data
+      volumes:
+        - name: ip-data
+          persistentVolumeClaim:
+            claimName: put-ip-data-claim
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

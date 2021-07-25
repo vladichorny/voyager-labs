@@ -1,0 +1,3 @@
+---
+k8s_namespace: default
+helm_charts_path: "{{ role_path }}/../../helm-charts"
