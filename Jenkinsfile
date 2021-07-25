@@ -7,7 +7,7 @@ pipeline {
     agent { label 'master' }
 
     options {
-        // skipDefaultCheckout()
+        skipDefaultCheckout()
         buildDiscarder(logRotator(numToKeepStr: '30'))
         disableConcurrentBuilds()
         timestamps()
@@ -16,33 +16,34 @@ pipeline {
 
 
     stages {
-        // stage("Checkout"){
-        //     steps{
-        //         cleanWs()
-        //         checkout scm
-        //     }
-        // }
-
-    stage('Docker Build') {
-        steps {
-            dir("docker-files/docker-service") {
-                runCommand script: """
-                    docker image inspect --format '{{index .RepoTags}}' "${docker_service}" 2> /dev/null | grep -q "${docker_service}" && \
-                        docker rmi --force ${docker_service} || true
-                    docker build --rm --tag ${docker_service} .
-                    # docker save ${docker_service} > ${WORKSPACE}/${publish_content}/${docker_service_file_name}.dockerimage
-                    # gzip ${WORKSPACE}/${publish_content}/${docker_service_file_name}.dockerimage
-                """
+        stage("Checkout"){
+            steps{
+                cleanWs()
+                checkout scm
             }
         }
-    }
 
-    stage('Deployment') {
-        steps {
-            runCommand script: """
-                ansible-playbook ansible-playbook/install.yml
-                minikube service --url web-service
-            """
+        stage('Docker Build') {
+            steps {
+                dir("docker-files/docker-service") {
+                    runCommand script: """
+                        docker image inspect --format '{{index .RepoTags}}' "${docker_service}" 2> /dev/null | grep -q "${docker_service}" && \
+                            docker rmi --force ${docker_service} || true
+                        docker build --rm --tag ${docker_service} .
+                        # docker save ${docker_service} > ${WORKSPACE}/${publish_content}/${docker_service_file_name}.dockerimage
+                        # gzip ${WORKSPACE}/${publish_content}/${docker_service_file_name}.dockerimage
+                    """
+                }
+            }
+        }
+
+        stage('Deployment') {
+            steps {
+                runCommand script: """
+                    ansible-playbook ansible-playbook/install.yml
+                    minikube service --url web-service
+                """
+            }
         }
     }
 }
