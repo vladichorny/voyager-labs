@@ -22,11 +22,11 @@ pipeline {
             steps {
                 dir("docker-files/docker-service") {
                     sh script: """
-                        eval $(minikube docker-env)
+                        # eval $(minikube docker-env)
                         docker rmi --force docker-service:1.0.0 || true                                    
                         docker build --rm --tag docker-service:1.0.0 .
                         docker scan  docker-service:1.0.0
-                        eval $(minikube docker-env --unset)
+                        # eval $(minikube docker-env --unset)
                     """
                 }
             }
@@ -35,8 +35,10 @@ pipeline {
         stage('Deployment') {
             steps {
                 sh script: """
+                    # eval $(minikube docker-env)
                     ansible-playbook ./ansible-playbook/install.yml
-                    service=$(minikube service --url web-service)
+                    # eval $(minikube docker-env --unset)
+                    # service=$(minikube service --url web-service)
                 """
             }
         }
@@ -44,6 +46,7 @@ pipeline {
         post {
             always {
                 println "This build and deployment took: ${currentBuild.durationString}"
+                println "Please run: 'minikube service --url web-service' to get web page url and open url in your browser"
             }
         }
     }
