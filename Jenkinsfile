@@ -22,7 +22,6 @@ pipeline {
         //         checkout scm
         //     }
         // }
-    }
 
     stage('Docker Build') {
         steps {
