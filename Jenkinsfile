@@ -31,7 +31,7 @@ pipeline {
 
         stage('Deployment') {
             steps {
-                runCommand script: "${WORKSPACE}/deployment.sh"
+                runCommand script: "${WORKSPACE}/deployment.sh ${WORKSPACE}/docker-files/docker-service"
             }
         }
     }
@@ -43,10 +43,10 @@ def runCommand(Map config = [:]) {
     if (isUnix()) {
         sh script: "sh $script"
     } else {
-        def linux_path_format = script.replace("\\", "/")
+        def script_linux_format = script.replace("\\", "/")
         bat script: """
-            ${cygwin_path}\\bin\\bash --login -c "dos2unix ${linux_path_format}"
-            ${cygwin_path}\\bin\\bash --login "${linux_path_format}"
+            ${cygwin_path}\\bin\\bash --login -c "dos2unix ${script_linux_format}"
+            ${cygwin_path}\\bin\\bash --login "${script_linux_format}"
         """
     }
 }
