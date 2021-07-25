@@ -47,9 +47,10 @@ def runCommand(Map config = [:]) {
     } else {
         def script_linux_format = script.replace("\\", "/")
         def args_linux_format = args.replace("\\", "/")
+        def command = args == "" ? script_linux_format : "${script_linux_format} ${args_linux_format}"
         bat script: """
             ${cygwin_path}\\bin\\bash --login -c "dos2unix ${script_linux_format}"
-            ${cygwin_path}\\bin\\bash --login "${script_linux_format} ${args_linux_format}"
+            ${cygwin_path}\\bin\\bash --login "${command}"
         """
     }
 }
